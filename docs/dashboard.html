@@ -143,7 +143,8 @@
   <a href="#regions"><span class="icon">🌍</span> Regions</a>
   <a href="#trends"><span class="icon">📈</span> Trends</a>
   <a href="#transactions"><span class="icon">🗂️</span> Transactions</a>
-  <div class="nav-footer">PostgreSQL · public.sales · 40 rows</div>
+  <a href="#schema"><span class="icon">🔗</span> Data Model</a>
+  <div class="nav-footer">PostgreSQL 18 · salesdb<br>sales: 40 · dim_date: 365<br>dim_product: 16 · dim_region: 4</div>
 </nav>
 
 <!-- Main -->
@@ -172,7 +173,7 @@
         <option value="West">West</option>
       </select>
     </div>
-    <span class="badge-live">● Live</span>
+    <span class="badge-live">● PostgreSQL 18 · salesdb</span>
   </div>
 
   <div class="content">
@@ -254,6 +255,85 @@
       </div>
     </div>
 
+    <!-- Data Model -->
+    <div class="section-title" id="schema">Data Model — Star Schema</div>
+    <div class="grid grid-2">
+      <div class="card" style="grid-column:span 2">
+        <div class="card-header"><h3>Entity Relationship</h3><span class="meta">public schema · PostgreSQL 18</span></div>
+        <div style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap;padding:8px 0">
+
+          <div style="flex:1;min-width:200px">
+            <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);margin-bottom:8px">Fact Table</div>
+            <div style="border:2px solid var(--accent);border-radius:8px;overflow:hidden">
+              <div style="background:var(--accent);color:#fff;padding:8px 14px;font-weight:700;font-size:0.85rem">sales</div>
+              <div style="padding:10px 14px;font-size:0.8rem;line-height:2">
+                <div><span style="color:var(--muted)">PK</span> &nbsp;id</div>
+                <div style="border-top:1px solid var(--border);padding-top:6px;margin-top:4px">product_name</div>
+                <div>category</div>
+                <div>region</div>
+                <div style="color:#6366f1;font-weight:600">sale_date → dim_date</div>
+                <div>quantity</div>
+                <div>unit_price</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:16px;flex:2;min-width:300px">
+            <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--accent2);margin-bottom:0">Dimension Tables</div>
+
+            <div style="border:2px solid var(--accent2);border-radius:8px;overflow:hidden">
+              <div style="background:var(--accent2);color:#fff;padding:8px 14px;font-weight:700;font-size:0.85rem">dim_date</div>
+              <div style="padding:8px 14px;font-size:0.8rem;display:grid;grid-template-columns:1fr 1fr;gap:2px 24px;line-height:1.9">
+                <div><span style="color:var(--muted)">PK</span> date_key</div><div>month_num</div>
+                <div>full_date</div><div>month_name</div>
+                <div>day_num</div><div>quarter_num</div>
+                <div>year_num</div><div>week_num</div>
+                <div style="grid-column:span 2">is_weekend</div>
+              </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+              <div style="border:2px solid #10b981;border-radius:8px;overflow:hidden">
+                <div style="background:#10b981;color:#fff;padding:8px 14px;font-weight:700;font-size:0.85rem">dim_product</div>
+                <div style="padding:8px 14px;font-size:0.8rem;line-height:2">
+                  <div><span style="color:var(--muted)">PK</span> product_id</div>
+                  <div>product_name</div>
+                  <div>category</div>
+                  <div>unit_price</div>
+                </div>
+              </div>
+              <div style="border:2px solid #f59e0b;border-radius:8px;overflow:hidden">
+                <div style="background:#f59e0b;color:#fff;padding:8px 14px;font-weight:700;font-size:0.85rem">dim_region</div>
+                <div style="padding:8px 14px;font-size:0.8rem;line-height:2">
+                  <div><span style="color:var(--muted)">PK</span> region_id</div>
+                  <div>region_name</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <div style="margin-top:20px;display:flex;gap:10px;flex-wrap:wrap">
+          <div style="background:#f8fafc;border:1px solid var(--border);border-radius:6px;padding:10px 16px;font-size:0.8rem">
+            <strong>40</strong> <span style="color:var(--muted)">fact rows</span>
+          </div>
+          <div style="background:#f8fafc;border:1px solid var(--border);border-radius:6px;padding:10px 16px;font-size:0.8rem">
+            <strong>365</strong> <span style="color:var(--muted)">date dimension rows (2026)</span>
+          </div>
+          <div style="background:#f8fafc;border:1px solid var(--border);border-radius:6px;padding:10px 16px;font-size:0.8rem">
+            <strong>16</strong> <span style="color:var(--muted)">products</span>
+          </div>
+          <div style="background:#f8fafc;border:1px solid var(--border);border-radius:6px;padding:10px 16px;font-size:0.8rem">
+            <strong>4</strong> <span style="color:var(--muted)">regions</span>
+          </div>
+          <div style="background:#f8fafc;border:1px solid var(--border);border-radius:6px;padding:10px 16px;font-size:0.8rem">
+            <strong id="schemaRevenue">—</strong> <span style="color:var(--muted)">total revenue</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 </main>
 
@@ -289,7 +369,7 @@ const DATA = [
   {product_name:'Printer',       category:'Electronics', region:'North', sale_date:'2026-05-27', quantity:3,  unit_price:900},
   {product_name:'USB Hub',       category:'Accessories', region:'West',  sale_date:'2026-05-28', quantity:14, unit_price:120},
   {product_name:'Laptop Stand',  category:'Accessories', region:'East',  sale_date:'2026-05-30', quantity:8,  unit_price:200},
-  {product_name:'Laptop',        category:'Electronics', region:'East',  sale_date:'2026-06-01', quantity:20, unit_price:4500},
+  {product_name:'Laptop',        category:'Electronics', region:'East',  sale_date:'2026-06-01', quantity:22, unit_price:4500},
   {product_name:'Monitor',       category:'Electronics', region:'North', sale_date:'2026-06-02', quantity:5,  unit_price:1200},
   {product_name:'Keyboard',      category:'Accessories', region:'West',  sale_date:'2026-06-03', quantity:10, unit_price:300},
   {product_name:'Mouse',         category:'Accessories', region:'South', sale_date:'2026-06-04', quantity:15, unit_price:150},
@@ -512,11 +592,14 @@ function render() {
   }).join('');
 }
 
-function setText(id, val) { document.getElementById(id).textContent = val; }
+function setText(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; }
 
 ['fMonth','fCategory','fRegion'].forEach(id => {
   document.getElementById(id).addEventListener('change', render);
 });
+
+// Schema total revenue (always full dataset, unaffected by filters)
+setText('schemaRevenue', fmt(DATA.reduce((s, r) => s + rev(r), 0)));
 
 // Smooth scroll for sidebar links
 document.querySelectorAll('nav a').forEach(a => {
