@@ -1,36 +1,77 @@
--- Core revenue
+-- ── Core ──────────────────────────────────────────────────────────────────
+
 Revenue =
 SUMX(
     'public sales',
     'public sales'[quantity] * 'public sales'[unit_price]
 )
 
--- Average revenue per transaction
-Avg Order Value =
-DIVIDE([Revenue], COUNTROWS('public sales'))
-
--- Total units sold
 Units Sold =
 SUM('public sales'[quantity])
 
--- Number of distinct products
+Avg Order Value =
+DIVIDE([Revenue], COUNTROWS('public sales'))
+
 Products Sold =
 DISTINCTCOUNT('public sales'[product_name])
 
--- Revenue share of selected vs all (for % of total visuals)
 Revenue % of Total =
 DIVIDE(
     [Revenue],
     CALCULATE([Revenue], ALL('public sales'))
 )
 
--- Month-over-month revenue change
-MoM Revenue Change =
-VAR CurrentMonth = [Revenue]
-VAR PrevMonth =
-    CALCULATE(
-        [Revenue],
-        DATEADD('public sales'[sale_date], -1, MONTH)
-    )
-RETURN
-DIVIDE(CurrentMonth - PrevMonth, PrevMonth)
+-- ── Time Intelligence (requires dim_date marked as Date Table) ────────────
+
+Revenue YTD =
+TOTALYTD(
+    [Revenue],
+    'public dim_date'[date]
+)
+
+Units Sold YTD =
+TOTALYTD(
+    [Units Sold],
+    'public dim_date'[date]
+)
+
+Revenue Prior Month =
+CALCULATE(
+    [Revenue],
+    DATEADD('public dim_date'[date], -1, MONTH)
+)
+
+Revenue MoM Change =
+[Revenue] - [Revenue Prior Month]
+
+Revenue Growth % =
+DIVIDE(
+    [Revenue MoM Change],
+    [Revenue Prior Month]
+)
+
+Revenue Prior Year =
+CALCULATE(
+    [Revenue],
+    SAMEPERIODLASTYEAR('public dim_date'[date])
+)
+
+Revenue YoY Growth % =
+DIVIDE(
+    [Revenue] - [Revenue Prior Year],
+    [Revenue Prior Year]
+)
+
+-- ── Rankings ──────────────────────────────────────────────────────────────
+
+Top Product =
+CALCULATE(
+    SELECTEDVALUE('public sales'[product_name]),
+    TOPN(1, VALUES('public sales'[product_name]), [Revenue], DESC)
+)
+
+Top Category =
+CALCULATE(
+    SELECTEDVALUE('public sales'[category]),
+    TOPN(1, VALUES('public sales'[category]), [Revenue], DESC)
+)

@@ -1,0 +1,95 @@
+name: DB Integration Test
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: salesdb
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      PGHOST: localhost
+      PGPORT: 5432
+      PGDATABASE: salesdb
+      PGUSER: postgres
+      PGPASSWORD: postgres
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create fact table
+        run: psql -f sql/create_tables.sql
+
+      - name: Create dimension tables
+        run: |
+          psql -f sql/dim_date.sql
+          psql -f sql/dim_product.sql
+          psql -f sql/dim_region.sql
+
+      - name: Seed sales data
+        run: psql -f sql/insert_data.sql
+
+      - name: Assert — sales row count equals 40
+        run: |
+          COUNT=$(psql -t -c "SELECT COUNT(*) FROM sales;" | xargs)
+          echo "sales rows: $COUNT"
+          [ "$COUNT" = "40" ] || { echo "FAIL: expected 40, got $COUNT"; exit 1; }
+
+      - name: Assert — total revenue equals 376530
+        run: |
+          REVENUE=$(psql -t -c "SELECT SUM(quantity * unit_price)::BIGINT FROM sales;" | xargs)
+          echo "total revenue: $REVENUE"
+          [ "$REVENUE" = "376530" ] || { echo "FAIL: expected 376530, got $REVENUE"; exit 1; }
+
+      - name: Assert — dim_date has 365 rows
+        run: |
+          COUNT=$(psql -t -c "SELECT COUNT(*) FROM dim_date;" | xargs)
+          echo "dim_date rows: $COUNT"
+          [ "$COUNT" = "365" ] || { echo "FAIL: expected 365, got $COUNT"; exit 1; }
+
+      - name: Assert — dim_product has 16 rows
+        run: |
+          COUNT=$(psql -t -c "SELECT COUNT(*) FROM dim_product;" | xargs)
+          echo "dim_product rows: $COUNT"
+          [ "$COUNT" = "16" ] || { echo "FAIL: expected 16, got $COUNT"; exit 1; }
+
+      - name: Assert — all sales products exist in dim_product
+        run: |
+          ORPHANS=$(psql -t -c "
+            SELECT COUNT(*) FROM sales s
+            WHERE NOT EXISTS (
+              SELECT 1 FROM dim_product p WHERE p.product_name = s.product_name
+            );" | xargs)
+          echo "orphan products: $ORPHANS"
+          [ "$ORPHANS" = "0" ] || { echo "FAIL: $ORPHANS sales rows have no matching dim_product entry"; exit 1; }
+
+      - name: Assert — all sales regions exist in dim_region
+        run: |
+          ORPHANS=$(psql -t -c "
+            SELECT COUNT(*) FROM sales s
+            WHERE NOT EXISTS (
+              SELECT 1 FROM dim_region r WHERE r.region_name = s.region
+            );" | xargs)
+          echo "orphan regions: $ORPHANS"
+          [ "$ORPHANS" = "0" ] || { echo "FAIL: $ORPHANS sales rows have no matching dim_region entry"; exit 1; }
+
+      - name: Run select query
+        run: psql -f sql/select_data.sql
