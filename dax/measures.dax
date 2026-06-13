@@ -1,0 +1,6 @@
+Revenue =
+SUMX(
+    'public sales',
+    'public sales'[quantity] *
+    'public sales'[unit_price]
+)

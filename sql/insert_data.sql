@@ -1,0 +1,36 @@
+INSERT INTO sales (
+    product_name,
+    category,
+    sale_date,
+    quantity,
+    unit_price
+)
+VALUES
+(
+    'Laptop',
+    'Electronics',
+    '2026-06-01',
+    20,
+    4500.00
+),
+(
+    'Monitor',
+    'Electronics',
+    '2026-06-02',
+    5,
+    1200.00
+),
+(
+    'Keyboard',
+    'Accessories',
+    '2026-06-03',
+    10,
+    300.00
+),
+(
+    'Mouse',
+    'Accessories',
+    '2026-06-04',
+    15,
+    150.00
+);
