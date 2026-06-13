@@ -1,5 +1,5 @@
 CREATE TABLE dim_date (
-    date_key   INTEGER PRIMARY KEY,  -- YYYYMMDD surrogate key
+    date_key   INTEGER PRIMARY KEY,
     date       DATE        NOT NULL,
     day        SMALLINT    NOT NULL,
     month      SMALLINT    NOT NULL,
