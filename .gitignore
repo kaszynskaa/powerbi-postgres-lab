@@ -1,0 +1,15 @@
+# Power BI
+*.pbix.bak
+*.pbit
+
+# PostgreSQL
+*.pgdump
+*.backup
+
+# Windows
+Thumbs.db
+Desktop.ini
+
+# Editors
+.vscode/
+*.swp
