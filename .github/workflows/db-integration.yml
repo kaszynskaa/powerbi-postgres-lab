@@ -59,11 +59,12 @@ jobs:
           echo "total revenue: $REVENUE"
           [ "$REVENUE" = "376530" ] || { echo "FAIL: expected 376530, got $REVENUE"; exit 1; }
 
-      - name: Assert — dim_date has 365 rows
+      - name: Assert — dim_date has 365 rows and columns are correct
         run: |
           COUNT=$(psql -t -c "SELECT COUNT(*) FROM dim_date;" | xargs)
           echo "dim_date rows: $COUNT"
           [ "$COUNT" = "365" ] || { echo "FAIL: expected 365, got $COUNT"; exit 1; }
+          psql -c "SELECT date_key, full_date, day_num, month_num, month_name, quarter, year_num, week_num, is_weekend FROM dim_date LIMIT 1;"
 
       - name: Assert — dim_product has 16 rows
         run: |
