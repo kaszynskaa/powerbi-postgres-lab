@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Project Report — Power BI + PostgreSQL Sales Lab</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: Segoe UI, system-ui, sans-serif;
+      background: #f4f6f9;
+      color: #222;
+      line-height: 1.7;
+    }
+
+    /* ── Layout ── */
+    .page { max-width: 900px; margin: 48px auto; background: #fff; border-radius: 10px; box-shadow: 0 2px 16px rgba(0,0,0,.09); overflow: hidden; }
+
+    /* ── Cover ── */
+    .cover {
+      background: linear-gradient(135deg, #1a1a2e 60%, #16213e);
+      color: #fff;
+      padding: 56px 56px 48px;
+    }
+    .cover .badge { display: inline-block; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.25); border-radius: 20px; font-size: 0.72rem; letter-spacing: .08em; text-transform: uppercase; padding: 4px 14px; margin-bottom: 20px; }
+    .cover h1 { font-size: 2rem; font-weight: 700; line-height: 1.25; }
+    .cover .subtitle { margin-top: 10px; font-size: 1rem; opacity: 0.65; }
+    .cover .meta { margin-top: 32px; display: flex; gap: 40px; font-size: 0.82rem; opacity: 0.7; }
+    .cover .meta span strong { display: block; color: #fff; opacity: 1; font-size: 0.88rem; }
+
+    /* ── Body ── */
+    .body { padding: 48px 56px 64px; }
+
+    /* ── TOC ── */
+    .toc { background: #f8f9fb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 24px 28px; margin-bottom: 48px; }
+    .toc h2 { font-size: 0.78rem; text-transform: uppercase; letter-spacing: .08em; color: #888; margin-bottom: 12px; }
+    .toc ol { padding-left: 20px; }
+    .toc li { margin: 5px 0; }
+    .toc a { color: #4f46e5; text-decoration: none; font-size: 0.9rem; }
+    .toc a:hover { text-decoration: underline; }
+
+    /* ── Sections ── */
+    section { margin-bottom: 48px; }
+    section h2 { font-size: 1.2rem; font-weight: 700; color: #1a1a2e; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px; margin-bottom: 20px; }
+    section h3 { font-size: 0.95rem; font-weight: 600; color: #374151; margin: 20px 0 8px; }
+    section p { font-size: 0.92rem; color: #444; margin-bottom: 12px; }
+    section ul, section ol { padding-left: 20px; margin-bottom: 12px; }
+    section li { font-size: 0.92rem; color: #444; margin: 4px 0; }
+
+    /* ── Code blocks ── */
+    pre {
+      background: #1e1e2e;
+      color: #cdd6f4;
+      border-radius: 6px;
+      padding: 18px 20px;
+      font-size: 0.82rem;
+      overflow-x: auto;
+      margin: 12px 0 20px;
+      line-height: 1.6;
+    }
+    code { font-family: 'Cascadia Code', 'Fira Code', Consolas, monospace; }
+    p code, li code {
+      background: #f1f3f9;
+      border: 1px solid #e2e6ef;
+      border-radius: 4px;
+      padding: 1px 6px;
+      font-size: 0.82rem;
+      color: #4f46e5;
+    }
+
+    /* ── Tables ── */
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; margin: 12px 0 20px; }
+    thead tr { background: #1a1a2e; color: #fff; }
+    thead th { padding: 10px 14px; text-align: left; font-weight: 600; font-size: 0.8rem; letter-spacing: .04em; }
+    tbody tr:nth-child(even) { background: #f8f9fb; }
+    tbody td { padding: 9px 14px; border-bottom: 1px solid #e5e7eb; color: #444; }
+
+    /* ── Callout boxes ── */
+    .callout { border-left: 4px solid #4f46e5; background: #f5f3ff; border-radius: 0 6px 6px 0; padding: 14px 18px; margin: 16px 0; font-size: 0.88rem; color: #3730a3; }
+
+    /* ── Architecture diagram ── */
+    .arch { display: flex; align-items: center; justify-content: center; gap: 0; margin: 24px 0; flex-wrap: wrap; }
+    .arch-box {
+      background: #f8f9fb;
+      border: 2px solid #d1d5db;
+      border-radius: 8px;
+      padding: 14px 20px;
+      text-align: center;
+      min-width: 120px;
+    }
+    .arch-box .icon { font-size: 1.6rem; }
+    .arch-box .label { font-size: 0.78rem; font-weight: 600; margin-top: 6px; color: #374151; }
+    .arch-box .sublabel { font-size: 0.7rem; color: #9ca3af; margin-top: 2px; }
+    .arch-arrow { font-size: 1.4rem; color: #9ca3af; margin: 0 8px; }
+
+    /* ── KPI row ── */
+    .kpis { display: flex; gap: 16px; margin: 20px 0; }
+    .kpi { flex: 1; background: #f8f9fb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 18px 20px; text-align: center; }
+    .kpi .val { font-size: 1.6rem; font-weight: 700; color: #1a1a2e; }
+    .kpi .lbl { font-size: 0.75rem; color: #888; margin-top: 4px; text-transform: uppercase; letter-spacing: .05em; }
+
+    /* ── File tree ── */
+    .tree { background: #1e1e2e; color: #cdd6f4; border-radius: 6px; padding: 18px 20px; font-family: 'Cascadia Code', Consolas, monospace; font-size: 0.82rem; line-height: 1.8; margin: 12px 0 20px; }
+    .tree .dir { color: #89b4fa; }
+    .tree .file { color: #a6e3a1; }
+    .tree .comment { color: #6c7086; }
+
+    /* ── Footer ── */
+    .footer { border-top: 1px solid #e5e7eb; padding: 24px 56px; font-size: 0.78rem; color: #aaa; display: flex; justify-content: space-between; }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Cover -->
+  <div class="cover">
+    <div class="badge">Technical Project Report</div>
+    <h1>Power BI + PostgreSQL<br>Sales Dashboard Lab</h1>
+    <p class="subtitle">End-to-end data pipeline from relational database to interactive business intelligence report</p>
+    <div class="meta">
+      <span><strong>Author</strong>Anna Kaszynska</span>
+      <span><strong>Date</strong>June 2026</span>
+      <span><strong>Version</strong>1.0</span>
+      <span><strong>Status</strong>Complete</span>
+    </div>
+  </div>
+
+  <!-- Body -->
+  <div class="body">
+
+    <!-- TOC -->
+    <div class="toc">
+      <h2>Contents</h2>
+      <ol>
+        <li><a href="#overview">Project Overview</a></li>
+        <li><a href="#architecture">Architecture</a></li>
+        <li><a href="#database">Database Layer</a></li>
+        <li><a href="#dax">DAX Measures</a></li>
+        <li><a href="#report">Power BI Report</a></li>
+        <li><a href="#data">Sample Data</a></li>
+        <li><a href="#ci">CI / Quality Gates</a></li>
+        <li><a href="#findings">Key Findings</a></li>
+        <li><a href="#next">Next Steps</a></li>
+      </ol>
+    </div>
+
+    <!-- 1. Overview -->
+    <section id="overview">
+      <h2>1. Project Overview</h2>
+      <p>This lab project demonstrates a complete, production-style data pipeline connecting a <strong>PostgreSQL</strong> relational database to a <strong>Power BI</strong> sales dashboard. It covers database design, data ingestion, DAX measure authoring, visual report design, and automated SQL quality checks via GitHub Actions.</p>
+      <div class="kpis">
+        <div class="kpi"><div class="val">1</div><div class="lbl">Table</div></div>
+        <div class="kpi"><div class="val">4</div><div class="lbl">SQL Scripts</div></div>
+        <div class="kpi"><div class="val">1</div><div class="lbl">DAX Measure</div></div>
+        <div class="kpi"><div class="val">3</div><div class="lbl">Visuals</div></div>
+        <div class="kpi"><div class="val">1</div><div class="lbl">CI Workflow</div></div>
+      </div>
+    </section>
+
+    <!-- 2. Architecture -->
+    <section id="architecture">
+      <h2>2. Architecture</h2>
+      <div class="arch">
+        <div class="arch-box"><div class="icon">🗄️</div><div class="label">PostgreSQL</div><div class="sublabel">Data source</div></div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-box"><div class="icon">🔌</div><div class="label">DirectQuery / Import</div><div class="sublabel">Power BI connector</div></div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-box"><div class="icon">📊</div><div class="label">Power BI Desktop</div><div class="sublabel">Model + DAX</div></div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-box"><div class="icon">📈</div><div class="label">Dashboard</div><div class="sublabel">sales_dashboard.pbix</div></div>
+      </div>
+      <p>PostgreSQL acts as the single source of truth. Power BI connects to the <code>public.sales</code> table, applies a calculated <code>Revenue</code> measure in DAX, and renders three chart types with an interactive category filter slicer.</p>
+    </section>
+
+    <!-- 3. Database -->
+    <section id="database">
+      <h2>3. Database Layer</h2>
+      <h3>Schema</h3>
+      <p>A single denormalised table is used, appropriate for a small-scale analytics lab. It stores one row per sale transaction.</p>
+      <pre><code>CREATE TABLE sales (
+    id           SERIAL PRIMARY KEY,
+    product_name VARCHAR(100),
+    category     VARCHAR(50),
+    sale_date    DATE,
+    quantity     INTEGER,
+    unit_price   NUMERIC(10,2)
+);</code></pre>
+
+      <h3>Column Reference</h3>
+      <table>
+        <thead><tr><th>Column</th><th>Type</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>id</code></td><td>SERIAL</td><td>Auto-incrementing surrogate key</td></tr>
+          <tr><td><code>product_name</code></td><td>VARCHAR(100)</td><td>Display name of the product</td></tr>
+          <tr><td><code>category</code></td><td>VARCHAR(50)</td><td>Product category used for filtering</td></tr>
+          <tr><td><code>sale_date</code></td><td>DATE</td><td>Date the sale was recorded</td></tr>
+          <tr><td><code>quantity</code></td><td>INTEGER</td><td>Number of units sold</td></tr>
+          <tr><td><code>unit_price</code></td><td>NUMERIC(10,2)</td><td>Price per unit in PLN</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Scripts</h3>
+      <table>
+        <thead><tr><th>File</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td><code>sql/create_tables.sql</code></td><td>DDL — creates the <code>sales</code> table</td></tr>
+          <tr><td><code>sql/insert_data.sql</code></td><td>DML — seeds four sample rows</td></tr>
+          <tr><td><code>sql/update_data.sql</code></td><td>DML — example update (Laptop quantity)</td></tr>
+          <tr><td><code>sql/select_data.sql</code></td><td>DQL — verification query with explicit columns</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 4. DAX -->
+    <section id="dax">
+      <h2>4. DAX Measures</h2>
+      <p>One measure is defined in <code>dax/measures.dax</code>. It iterates the <code>public sales</code> table and computes revenue row by row using <code>SUMX</code>, which correctly handles row-level arithmetic before aggregation.</p>
+      <pre><code>Revenue =
+SUMX(
+    'public sales',
+    'public sales'[quantity] * 'public sales'[unit_price]
+)</code></pre>
+      <div class="callout">
+        <strong>Why SUMX over SUM?</strong> — <code>SUM(quantity) * SUM(unit_price)</code> would give an incorrect result when multiple products are present. <code>SUMX</code> multiplies per row first, then aggregates.
+      </div>
+    </section>
+
+    <!-- 5. Report -->
+    <section id="report">
+      <h2>5. Power BI Report</h2>
+      <p>The report file <code>powerbi/sales_dashboard.pbix</code> contains three visuals and one slicer:</p>
+      <table>
+        <thead><tr><th>Visual</th><th>Type</th><th>Axis / Legend</th><th>Values</th></tr></thead>
+        <tbody>
+          <tr><td>Revenue by Sale Date</td><td>Line chart</td><td>sale_date</td><td>Revenue</td></tr>
+          <tr><td>Revenue by Category</td><td>Bar / Donut</td><td>category</td><td>Revenue</td></tr>
+          <tr><td>Revenue by Product</td><td>Bar chart</td><td>product_name</td><td>Revenue</td></tr>
+          <tr><td>Category filter</td><td>Slicer</td><td>category</td><td>—</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 6. Data -->
+    <section id="data">
+      <h2>6. Sample Data</h2>
+      <table>
+        <thead><tr><th>Product</th><th>Category</th><th>Date</th><th>Qty</th><th>Unit Price</th><th>Revenue</th></tr></thead>
+        <tbody>
+          <tr><td>Laptop</td><td>Electronics</td><td>2026-06-01</td><td>20</td><td>4,500.00</td><td><strong>90,000.00</strong></td></tr>
+          <tr><td>Monitor</td><td>Electronics</td><td>2026-06-02</td><td>5</td><td>1,200.00</td><td><strong>6,000.00</strong></td></tr>
+          <tr><td>Keyboard</td><td>Accessories</td><td>2026-06-03</td><td>10</td><td>300.00</td><td><strong>3,000.00</strong></td></tr>
+          <tr><td>Mouse</td><td>Accessories</td><td>2026-06-04</td><td>15</td><td>150.00</td><td><strong>2,250.00</strong></td></tr>
+        </tbody>
+      </table>
+      <p><strong>Total Revenue: 101,250.00 PLN</strong> — Electronics accounts for 94.8% of total revenue, driven primarily by Laptop sales.</p>
+    </section>
+
+    <!-- 7. CI -->
+    <section id="ci">
+      <h2>7. CI / Quality Gates</h2>
+      <p>A GitHub Actions workflow (<code>.github/workflows/sql-lint.yml</code>) runs <strong>sqlfluff</strong> against all files in <code>sql/</code> on every push and pull request to <code>master</code>.</p>
+      <pre><code>sqlfluff lint sql/ --dialect postgres</code></pre>
+      <p>Configuration is managed via <code>.sqlfluff</code>:</p>
+      <ul>
+        <li>Dialect set to <code>postgres</code></li>
+        <li>Keywords enforced as <code>UPPER</code> case</li>
+        <li>Identifiers enforced as <code>lower</code> case</li>
+        <li>Wildcard SELECT rule (<code>AM04</code>) excluded for analytical queries</li>
+      </ul>
+    </section>
+
+    <!-- 8. Findings -->
+    <section id="findings">
+      <h2>8. Key Findings</h2>
+      <ul>
+        <li><strong>Revenue concentration</strong> — Laptop alone generates 88.9% of total revenue (90,000 PLN of 101,250 PLN).</li>
+        <li><strong>Category split</strong> — Electronics: 94.8% vs Accessories: 5.2%.</li>
+        <li><strong>Volume vs value</strong> — Accessories have higher unit counts but far lower revenue per sale.</li>
+        <li><strong>Trend</strong> — Revenue peaks on Day 1 (Laptop) and drops sharply — suggests a need for more diverse high-value products.</li>
+      </ul>
+    </section>
+
+    <!-- 9. Next Steps -->
+    <section id="next">
+      <h2>9. Next Steps</h2>
+      <ol>
+        <li>Add a <strong>date dimension table</strong> for time intelligence DAX functions (YTD, MoM).</li>
+        <li>Introduce a <strong>products dimension</strong> to normalise the schema.</li>
+        <li>Add <strong>more DAX measures</strong>: Average Order Value, Units Sold YTD, Revenue Growth %.</li>
+        <li>Publish the report to <strong>Power BI Service</strong> for sharing and scheduled refresh.</li>
+        <li>Expand CI to include a <strong>database integration test</strong> that seeds and queries a temporary PostgreSQL container.</li>
+      </ol>
+    </section>
+
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <span>Power BI + PostgreSQL Sales Lab — Technical Report</span>
+    <span>Anna Kaszynska &middot; June 2026</span>
+  </div>
+
+</div>
+</body>
+</html>
