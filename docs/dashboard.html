@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sales Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Segoe UI, sans-serif; background: #f4f6f9; color: #333; }
+    header { background: #1a1a2e; color: #fff; padding: 20px 32px; }
+    header h1 { font-size: 1.4rem; font-weight: 600; }
+    header p { font-size: 0.85rem; opacity: 0.65; margin-top: 4px; }
+
+    .filters { display: flex; gap: 12px; padding: 16px 32px; background: #fff; border-bottom: 1px solid #e0e0e0; }
+    .filters label { font-size: 0.8rem; font-weight: 600; color: #555; }
+    .filters select { margin-left: 8px; padding: 4px 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 0.85rem; }
+
+    .kpis { display: flex; gap: 16px; padding: 24px 32px 0; }
+    .kpi { background: #fff; border-radius: 8px; padding: 20px 24px; flex: 1; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+    .kpi .label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: .05em; color: #888; }
+    .kpi .value { font-size: 1.8rem; font-weight: 700; margin-top: 6px; color: #1a1a2e; }
+
+    .charts { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 24px 32px 32px; }
+    .chart-card { background: #fff; border-radius: 8px; padding: 20px 24px; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+    .chart-card.wide { grid-column: span 2; }
+    .chart-card h2 { font-size: 0.9rem; font-weight: 600; color: #555; margin-bottom: 16px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Sales Dashboard</h1>
+  <p>Source: PostgreSQL &mdash; public.sales</p>
+</header>
+
+<div class="filters">
+  <div>
+    <label for="categoryFilter">Category</label>
+    <select id="categoryFilter">
+      <option value="all">All</option>
+      <option value="Electronics">Electronics</option>
+      <option value="Accessories">Accessories</option>
+    </select>
+  </div>
+</div>
+
+<div class="kpis">
+  <div class="kpi"><div class="label">Total Revenue</div><div class="value" id="kpiRevenue">—</div></div>
+  <div class="kpi"><div class="label">Total Units Sold</div><div class="value" id="kpiUnits">—</div></div>
+  <div class="kpi"><div class="label">Products</div><div class="value" id="kpiProducts">—</div></div>
+</div>
+
+<div class="charts">
+  <div class="chart-card wide">
+    <h2>Revenue by Sale Date</h2>
+    <canvas id="chartDate"></canvas>
+  </div>
+  <div class="chart-card">
+    <h2>Revenue by Category</h2>
+    <canvas id="chartCategory"></canvas>
+  </div>
+  <div class="chart-card">
+    <h2>Revenue by Product</h2>
+    <canvas id="chartProduct"></canvas>
+  </div>
+</div>
+
+<script>
+  const DATA = [
+    { product_name: 'Laptop',   category: 'Electronics', sale_date: '2026-06-01', quantity: 20, unit_price: 4500 },
+    { product_name: 'Monitor',  category: 'Electronics', sale_date: '2026-06-02', quantity: 5,  unit_price: 1200 },
+    { product_name: 'Keyboard', category: 'Accessories', sale_date: '2026-06-03', quantity: 10, unit_price: 300  },
+    { product_name: 'Mouse',    category: 'Accessories', sale_date: '2026-06-04', quantity: 15, unit_price: 150  },
+  ];
+
+  const COLORS = ['#4f46e5', '#06b6d4', '#10b981', '#f59e0b', '#ef4444'];
+
+  let chartDate, chartCategory, chartProduct;
+
+  function revenue(row) { return row.quantity * row.unit_price; }
+
+  function groupBy(rows, key) {
+    return rows.reduce((acc, r) => {
+      acc[r[key]] = (acc[r[key]] || 0) + revenue(r);
+      return acc;
+    }, {});
+  }
+
+  function makeOrUpdate(ref, id, type, labels, values, legend) {
+    const ctx = document.getElementById(id).getContext('2d');
+    if (ref) ref.destroy();
+    return new Chart(ctx, {
+      type,
+      data: {
+        labels,
+        datasets: [{ label: legend, data: values, backgroundColor: COLORS, borderColor: type === 'line' ? COLORS[0] : COLORS, borderWidth: type === 'line' ? 2 : 0, fill: type === 'line', tension: 0.3, pointRadius: 4 }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: type !== 'doughnut' ? { y: { beginAtZero: true, ticks: { callback: v => '₿' + v.toLocaleString() } } } : {}
+      }
+    });
+  }
+
+  function render(category) {
+    const rows = category === 'all' ? DATA : DATA.filter(r => r.category === category);
+
+    const totalRevenue = rows.reduce((s, r) => s + revenue(r), 0);
+    const totalUnits   = rows.reduce((s, r) => s + r.quantity, 0);
+    document.getElementById('kpiRevenue').textContent  = totalRevenue.toLocaleString('en-US', { style: 'currency', currency: 'PLN', maximumFractionDigits: 0 });
+    document.getElementById('kpiUnits').textContent    = totalUnits;
+    document.getElementById('kpiProducts').textContent = rows.length;
+
+    const byDate     = groupBy(rows, 'sale_date');
+    const byCat      = groupBy(rows, 'category');
+    const byProduct  = groupBy(rows, 'product_name');
+
+    chartDate     = makeOrUpdate(chartDate,     'chartDate',     'line',     Object.keys(byDate),    Object.values(byDate),    'Revenue');
+    chartCategory = makeOrUpdate(chartCategory, 'chartCategory', 'doughnut', Object.keys(byCat),     Object.values(byCat),     'Revenue');
+    chartProduct  = makeOrUpdate(chartProduct,  'chartProduct',  'bar',      Object.keys(byProduct), Object.values(byProduct), 'Revenue');
+  }
+
+  document.getElementById('categoryFilter').addEventListener('change', e => render(e.target.value));
+  render('all');
+</script>
+</body>
+</html>
