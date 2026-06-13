@@ -1,6 +1,36 @@
+-- Core revenue
 Revenue =
 SUMX(
     'public sales',
-    'public sales'[quantity] *
-    'public sales'[unit_price]
+    'public sales'[quantity] * 'public sales'[unit_price]
 )
+
+-- Average revenue per transaction
+Avg Order Value =
+DIVIDE([Revenue], COUNTROWS('public sales'))
+
+-- Total units sold
+Units Sold =
+SUM('public sales'[quantity])
+
+-- Number of distinct products
+Products Sold =
+DISTINCTCOUNT('public sales'[product_name])
+
+-- Revenue share of selected vs all (for % of total visuals)
+Revenue % of Total =
+DIVIDE(
+    [Revenue],
+    CALCULATE([Revenue], ALL('public sales'))
+)
+
+-- Month-over-month revenue change
+MoM Revenue Change =
+VAR CurrentMonth = [Revenue]
+VAR PrevMonth =
+    CALCULATE(
+        [Revenue],
+        DATEADD('public sales'[sale_date], -1, MONTH)
+    )
+RETURN
+DIVIDE(CurrentMonth - PrevMonth, PrevMonth)

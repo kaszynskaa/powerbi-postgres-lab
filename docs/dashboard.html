@@ -4,126 +4,529 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Sales Dashboard</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: Segoe UI, sans-serif; background: #f4f6f9; color: #333; }
-    header { background: #1a1a2e; color: #fff; padding: 20px 32px; }
-    header h1 { font-size: 1.4rem; font-weight: 600; }
-    header p { font-size: 0.85rem; opacity: 0.65; margin-top: 4px; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --nav: #0f172a;
+      --nav-w: 220px;
+      --accent: #6366f1;
+      --accent2: #06b6d4;
+      --bg: #f1f5f9;
+      --card: #ffffff;
+      --text: #1e293b;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --radius: 10px;
+      --shadow: 0 1px 6px rgba(0,0,0,.08);
+    }
+    html { font-size: 15px; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); display: flex; min-height: 100vh; }
 
-    .filters { display: flex; gap: 12px; padding: 16px 32px; background: #fff; border-bottom: 1px solid #e0e0e0; }
-    .filters label { font-size: 0.8rem; font-weight: 600; color: #555; }
-    .filters select { margin-left: 8px; padding: 4px 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 0.85rem; }
+    /* ── Sidebar ── */
+    nav {
+      width: var(--nav-w); min-height: 100vh; background: var(--nav);
+      display: flex; flex-direction: column; position: fixed; top: 0; left: 0; z-index: 100;
+    }
+    .nav-logo { padding: 28px 20px 20px; border-bottom: 1px solid rgba(255,255,255,.08); }
+    .nav-logo h2 { color: #fff; font-size: 1rem; font-weight: 700; line-height: 1.3; }
+    .nav-logo p  { color: rgba(255,255,255,.4); font-size: 0.72rem; margin-top: 3px; }
+    .nav-section { padding: 18px 12px 4px; font-size: 0.65rem; letter-spacing: .1em; text-transform: uppercase; color: rgba(255,255,255,.3); }
+    nav a {
+      display: flex; align-items: center; gap: 10px; padding: 9px 14px;
+      margin: 1px 8px; border-radius: 7px; color: rgba(255,255,255,.6);
+      text-decoration: none; font-size: 0.85rem; transition: all .15s;
+    }
+    nav a:hover, nav a.active { background: rgba(255,255,255,.08); color: #fff; }
+    nav a.active { background: var(--accent); color: #fff; }
+    nav a .icon { font-size: 1rem; width: 20px; text-align: center; }
+    .nav-footer { margin-top: auto; padding: 16px 20px; font-size: 0.72rem; color: rgba(255,255,255,.25); border-top: 1px solid rgba(255,255,255,.06); }
 
-    .kpis { display: flex; gap: 16px; padding: 24px 32px 0; }
-    .kpi { background: #fff; border-radius: 8px; padding: 20px 24px; flex: 1; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
-    .kpi .label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: .05em; color: #888; }
-    .kpi .value { font-size: 1.8rem; font-weight: 700; margin-top: 6px; color: #1a1a2e; }
+    /* ── Main ── */
+    main { margin-left: var(--nav-w); flex: 1; display: flex; flex-direction: column; }
 
-    .charts { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 24px 32px 32px; }
-    .chart-card { background: #fff; border-radius: 8px; padding: 20px 24px; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
-    .chart-card.wide { grid-column: span 2; }
-    .chart-card h2 { font-size: 0.9rem; font-weight: 600; color: #555; margin-bottom: 16px; }
+    /* ── Topbar ── */
+    .topbar {
+      background: var(--card); border-bottom: 1px solid var(--border);
+      padding: 14px 28px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+      position: sticky; top: 0; z-index: 50;
+    }
+    .topbar h1 { font-size: 1rem; font-weight: 700; flex: 1; }
+    .topbar .filters { display: flex; gap: 10px; flex-wrap: wrap; }
+    .topbar select {
+      padding: 6px 30px 6px 12px; border: 1px solid var(--border); border-radius: 6px;
+      font-size: 0.82rem; color: var(--text); background: var(--bg);
+      appearance: none; cursor: pointer;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 10px center;
+    }
+    .topbar select:focus { outline: none; border-color: var(--accent); }
+    .badge-live { background: #dcfce7; color: #166534; font-size: 0.7rem; padding: 3px 10px; border-radius: 20px; font-weight: 600; }
+
+    /* ── Content ── */
+    .content { padding: 24px 28px 40px; }
+
+    /* ── KPI row ── */
+    .kpis { display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px; margin-bottom: 22px; }
+    .kpi {
+      background: var(--card); border-radius: var(--radius); padding: 18px 16px;
+      box-shadow: var(--shadow); border: 1px solid var(--border); position: relative; overflow: hidden;
+    }
+    .kpi::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      background: var(--accent);
+    }
+    .kpi.c2::before { background: var(--accent2); }
+    .kpi.c3::before { background: #10b981; }
+    .kpi.c4::before { background: #f59e0b; }
+    .kpi.c5::before { background: #ef4444; }
+    .kpi.c6::before { background: #8b5cf6; }
+    .kpi .lbl { font-size: 0.7rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 6px; }
+    .kpi .val { font-size: 1.35rem; font-weight: 800; color: var(--text); white-space: nowrap; }
+    .kpi .sub { font-size: 0.72rem; color: var(--muted); margin-top: 3px; }
+    .kpi .trend { font-size: 0.72rem; margin-top: 4px; font-weight: 600; }
+    .kpi .trend.up { color: #16a34a; }
+    .kpi .trend.dn { color: #dc2626; }
+
+    /* ── Chart grid ── */
+    .grid { display: grid; gap: 18px; }
+    .grid-2 { grid-template-columns: 1fr 1fr; }
+    .grid-3 { grid-template-columns: 2fr 1fr 1fr; }
+    .grid-full { grid-template-columns: 1fr; }
+
+    .card {
+      background: var(--card); border-radius: var(--radius); padding: 20px 22px;
+      box-shadow: var(--shadow); border: 1px solid var(--border);
+    }
+    .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .card-header h3 { font-size: 0.88rem; font-weight: 700; color: var(--text); }
+    .card-header .meta { font-size: 0.72rem; color: var(--muted); }
+
+    /* ── Table ── */
+    .tbl-wrap { overflow-x: auto; margin-top: 4px; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    thead th { padding: 8px 12px; text-align: left; font-size: 0.7rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); border-bottom: 2px solid var(--border); }
+    thead th.sort { cursor: pointer; user-select: none; }
+    thead th.sort:hover { color: var(--accent); }
+    tbody tr { transition: background .1s; }
+    tbody tr:hover { background: #f8fafc; }
+    tbody td { padding: 9px 12px; border-bottom: 1px solid var(--border); }
+    .cat-chip {
+      display: inline-block; padding: 2px 9px; border-radius: 20px; font-size: 0.72rem; font-weight: 600;
+    }
+    .chip-Electronics { background: #eef2ff; color: #4338ca; }
+    .chip-Accessories { background: #ecfeff; color: #0e7490; }
+    .chip-Software    { background: #f0fdf4; color: #166534; }
+    .chip-Furniture   { background: #fffbeb; color: #92400e; }
+    .rev-bar { height: 6px; border-radius: 3px; background: var(--accent); opacity: .7; margin-top: 4px; }
+
+    /* ── Legend ── */
+    .legend { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+    .legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.75rem; color: var(--muted); }
+    .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+    /* ── Section divider ── */
+    .section-title { font-size: 0.7rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 24px 0 12px; font-weight: 600; }
   </style>
 </head>
 <body>
 
-<header>
-  <h1>Sales Dashboard</h1>
-  <p>Source: PostgreSQL &mdash; public.sales</p>
-</header>
+<!-- Sidebar -->
+<nav>
+  <div class="nav-logo">
+    <h2>Sales Intelligence</h2>
+    <p>Power BI + PostgreSQL Lab</p>
+  </div>
+  <div class="nav-section">Analytics</div>
+  <a href="#overview" class="active"><span class="icon">📊</span> Overview</a>
+  <a href="#products"><span class="icon">📦</span> Products</a>
+  <a href="#regions"><span class="icon">🌍</span> Regions</a>
+  <a href="#trends"><span class="icon">📈</span> Trends</a>
+  <a href="#transactions"><span class="icon">🗂️</span> Transactions</a>
+  <div class="nav-footer">PostgreSQL · public.sales · 40 rows</div>
+</nav>
 
-<div class="filters">
-  <div>
-    <label for="categoryFilter">Category</label>
-    <select id="categoryFilter">
-      <option value="all">All</option>
-      <option value="Electronics">Electronics</option>
-      <option value="Accessories">Accessories</option>
-    </select>
+<!-- Main -->
+<main>
+  <div class="topbar">
+    <h1>Sales Dashboard</h1>
+    <div class="filters">
+      <select id="fMonth">
+        <option value="all">All Months</option>
+        <option value="2026-04">April 2026</option>
+        <option value="2026-05">May 2026</option>
+        <option value="2026-06">June 2026</option>
+      </select>
+      <select id="fCategory">
+        <option value="all">All Categories</option>
+        <option value="Electronics">Electronics</option>
+        <option value="Accessories">Accessories</option>
+        <option value="Software">Software</option>
+        <option value="Furniture">Furniture</option>
+      </select>
+      <select id="fRegion">
+        <option value="all">All Regions</option>
+        <option value="North">North</option>
+        <option value="South">South</option>
+        <option value="East">East</option>
+        <option value="West">West</option>
+      </select>
+    </div>
+    <span class="badge-live">● Live</span>
   </div>
-</div>
 
-<div class="kpis">
-  <div class="kpi"><div class="label">Total Revenue</div><div class="value" id="kpiRevenue">—</div></div>
-  <div class="kpi"><div class="label">Total Units Sold</div><div class="value" id="kpiUnits">—</div></div>
-  <div class="kpi"><div class="label">Products</div><div class="value" id="kpiProducts">—</div></div>
-</div>
+  <div class="content">
 
-<div class="charts">
-  <div class="chart-card wide">
-    <h2>Revenue by Sale Date</h2>
-    <canvas id="chartDate"></canvas>
+    <!-- KPIs -->
+    <div id="overview" class="kpis">
+      <div class="kpi c1"><div class="lbl">Total Revenue</div><div class="val" id="kRevenue">—</div><div class="sub" id="kRevSub">—</div></div>
+      <div class="kpi c2"><div class="lbl">Units Sold</div><div class="val" id="kUnits">—</div><div class="sub" id="kUnitSub">—</div></div>
+      <div class="kpi c3"><div class="lbl">Avg Order Value</div><div class="val" id="kAvg">—</div><div class="sub">per transaction</div></div>
+      <div class="kpi c4"><div class="lbl">Transactions</div><div class="val" id="kCount">—</div><div class="sub" id="kCountSub">—</div></div>
+      <div class="kpi c5"><div class="lbl">Top Product</div><div class="val" id="kProduct" style="font-size:1rem">—</div><div class="sub" id="kProductRev">—</div></div>
+      <div class="kpi c6"><div class="lbl">Top Region</div><div class="val" id="kRegion" style="font-size:1rem">—</div><div class="sub" id="kRegionRev">—</div></div>
+    </div>
+
+    <!-- Row 1: Revenue trend + Category donut -->
+    <div class="grid grid-2">
+      <div class="card">
+        <div class="card-header"><h3>Revenue by Date</h3><span class="meta" id="trendMeta">—</span></div>
+        <canvas id="cTrend" height="140"></canvas>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>Revenue by Category</h3><span class="meta" id="catMeta">—</span></div>
+        <canvas id="cCategory" height="140"></canvas>
+        <div class="legend" id="catLegend"></div>
+      </div>
+    </div>
+
+    <div class="section-title" id="products">Products &amp; Regions</div>
+
+    <!-- Row 2: Products bar + Region bar + Monthly grouped -->
+    <div class="grid grid-2">
+      <div class="card">
+        <div class="card-header"><h3>Top Products by Revenue</h3><span class="meta" id="prodMeta">ranked</span></div>
+        <canvas id="cProducts" height="180"></canvas>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>Revenue by Region</h3><span class="meta" id="regionMeta">—</span></div>
+        <canvas id="cRegion" height="180"></canvas>
+      </div>
+    </div>
+
+    <div class="section-title" id="regions">Monthly &amp; Category Breakdown</div>
+
+    <!-- Row 3: Monthly grouped + Category x Region matrix -->
+    <div class="grid grid-2">
+      <div class="card">
+        <div class="card-header"><h3>Monthly Revenue by Category</h3><span class="meta">stacked</span></div>
+        <canvas id="cMonthly" height="160"></canvas>
+      </div>
+      <div class="card" id="trends">
+        <div class="card-header"><h3>Category × Region Heat</h3><span class="meta">revenue PLN</span></div>
+        <div class="tbl-wrap" id="heatTable"></div>
+      </div>
+    </div>
+
+    <!-- Transactions table -->
+    <div class="section-title" id="transactions">All Transactions</div>
+    <div class="card">
+      <div class="card-header">
+        <h3>Transaction Log</h3>
+        <span class="meta" id="txMeta">—</span>
+      </div>
+      <div class="tbl-wrap">
+        <table id="txTable">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Product</th>
+              <th>Category</th>
+              <th>Region</th>
+              <th style="text-align:right">Qty</th>
+              <th style="text-align:right">Unit Price</th>
+              <th style="text-align:right">Revenue</th>
+              <th>Share</th>
+            </tr>
+          </thead>
+          <tbody id="txBody"></tbody>
+        </table>
+      </div>
+    </div>
+
   </div>
-  <div class="chart-card">
-    <h2>Revenue by Category</h2>
-    <canvas id="chartCategory"></canvas>
-  </div>
-  <div class="chart-card">
-    <h2>Revenue by Product</h2>
-    <canvas id="chartProduct"></canvas>
-  </div>
-</div>
+</main>
 
 <script>
-  const DATA = [
-    { product_name: 'Laptop',   category: 'Electronics', sale_date: '2026-06-01', quantity: 20, unit_price: 4500 },
-    { product_name: 'Monitor',  category: 'Electronics', sale_date: '2026-06-02', quantity: 5,  unit_price: 1200 },
-    { product_name: 'Keyboard', category: 'Accessories', sale_date: '2026-06-03', quantity: 10, unit_price: 300  },
-    { product_name: 'Mouse',    category: 'Accessories', sale_date: '2026-06-04', quantity: 15, unit_price: 150  },
-  ];
+const DATA = [
+  {product_name:'Laptop',        category:'Electronics', region:'North', sale_date:'2026-04-03', quantity:5,  unit_price:4500},
+  {product_name:'Monitor',       category:'Electronics', region:'East',  sale_date:'2026-04-05', quantity:3,  unit_price:1200},
+  {product_name:'Keyboard',      category:'Accessories', region:'South', sale_date:'2026-04-07', quantity:12, unit_price:300},
+  {product_name:'Office License',category:'Software',    region:'West',  sale_date:'2026-04-08', quantity:8,  unit_price:800},
+  {product_name:'Desk',          category:'Furniture',   region:'North', sale_date:'2026-04-10', quantity:2,  unit_price:1800},
+  {product_name:'Mouse',         category:'Accessories', region:'East',  sale_date:'2026-04-12', quantity:20, unit_price:150},
+  {product_name:'Tablet',        category:'Electronics', region:'South', sale_date:'2026-04-14', quantity:4,  unit_price:2800},
+  {product_name:'Chair',         category:'Furniture',   region:'West',  sale_date:'2026-04-15', quantity:3,  unit_price:1200},
+  {product_name:'Headphones',    category:'Accessories', region:'North', sale_date:'2026-04-18', quantity:7,  unit_price:450},
+  {product_name:'Antivirus',     category:'Software',    region:'East',  sale_date:'2026-04-20', quantity:15, unit_price:250},
+  {product_name:'Smartphone',    category:'Electronics', region:'South', sale_date:'2026-04-22', quantity:6,  unit_price:3200},
+  {product_name:'USB Hub',       category:'Accessories', region:'West',  sale_date:'2026-04-25', quantity:10, unit_price:120},
+  {product_name:'Laptop Stand',  category:'Accessories', region:'North', sale_date:'2026-04-27', quantity:5,  unit_price:200},
+  {product_name:'Printer',       category:'Electronics', region:'East',  sale_date:'2026-04-28', quantity:2,  unit_price:900},
+  {product_name:'Laptop',        category:'Electronics', region:'South', sale_date:'2026-05-02', quantity:8,  unit_price:4500},
+  {product_name:'Design Suite',  category:'Software',    region:'North', sale_date:'2026-05-04', quantity:3,  unit_price:1500},
+  {product_name:'Monitor',       category:'Electronics', region:'West',  sale_date:'2026-05-06', quantity:5,  unit_price:1200},
+  {product_name:'Keyboard',      category:'Accessories', region:'East',  sale_date:'2026-05-08', quantity:15, unit_price:300},
+  {product_name:'Desk',          category:'Furniture',   region:'South', sale_date:'2026-05-09', quantity:1,  unit_price:1800},
+  {product_name:'Smartphone',    category:'Electronics', region:'North', sale_date:'2026-05-11', quantity:10, unit_price:3200},
+  {product_name:'Webcam',        category:'Accessories', region:'West',  sale_date:'2026-05-13', quantity:8,  unit_price:350},
+  {product_name:'Office License',category:'Software',    region:'East',  sale_date:'2026-05-15', quantity:12, unit_price:800},
+  {product_name:'Mouse',         category:'Accessories', region:'South', sale_date:'2026-05-17', quantity:25, unit_price:150},
+  {product_name:'Tablet',        category:'Electronics', region:'North', sale_date:'2026-05-19', quantity:3,  unit_price:2800},
+  {product_name:'Chair',         category:'Furniture',   region:'West',  sale_date:'2026-05-21', quantity:4,  unit_price:1200},
+  {product_name:'Headphones',    category:'Accessories', region:'East',  sale_date:'2026-05-23', quantity:6,  unit_price:450},
+  {product_name:'Antivirus',     category:'Software',    region:'South', sale_date:'2026-05-25', quantity:20, unit_price:250},
+  {product_name:'Printer',       category:'Electronics', region:'North', sale_date:'2026-05-27', quantity:3,  unit_price:900},
+  {product_name:'USB Hub',       category:'Accessories', region:'West',  sale_date:'2026-05-28', quantity:14, unit_price:120},
+  {product_name:'Laptop Stand',  category:'Accessories', region:'East',  sale_date:'2026-05-30', quantity:8,  unit_price:200},
+  {product_name:'Laptop',        category:'Electronics', region:'East',  sale_date:'2026-06-01', quantity:20, unit_price:4500},
+  {product_name:'Monitor',       category:'Electronics', region:'North', sale_date:'2026-06-02', quantity:5,  unit_price:1200},
+  {product_name:'Keyboard',      category:'Accessories', region:'West',  sale_date:'2026-06-03', quantity:10, unit_price:300},
+  {product_name:'Mouse',         category:'Accessories', region:'South', sale_date:'2026-06-04', quantity:15, unit_price:150},
+  {product_name:'Smartphone',    category:'Electronics', region:'East',  sale_date:'2026-06-06', quantity:7,  unit_price:3200},
+  {product_name:'Design Suite',  category:'Software',    region:'North', sale_date:'2026-06-08', quantity:4,  unit_price:1500},
+  {product_name:'Desk',          category:'Furniture',   region:'West',  sale_date:'2026-06-10', quantity:3,  unit_price:1800},
+  {product_name:'Headphones',    category:'Accessories', region:'South', sale_date:'2026-06-11', quantity:9,  unit_price:450},
+  {product_name:'Tablet',        category:'Electronics', region:'East',  sale_date:'2026-06-13', quantity:5,  unit_price:2800},
+  {product_name:'Office License',category:'Software',    region:'North', sale_date:'2026-06-13', quantity:10, unit_price:800},
+];
 
-  const COLORS = ['#4f46e5', '#06b6d4', '#10b981', '#f59e0b', '#ef4444'];
+const CAT_COLORS = { Electronics:'#6366f1', Accessories:'#06b6d4', Software:'#10b981', Furniture:'#f59e0b' };
+const REG_COLORS = { North:'#ef4444', South:'#8b5cf6', East:'#f97316', West:'#14b8a6' };
+const MONTHS = ['2026-04','2026-05','2026-06'];
+const MONTH_LABELS = { '2026-04':'April', '2026-05':'May', '2026-06':'June' };
 
-  let chartDate, chartCategory, chartProduct;
+const charts = {};
 
-  function revenue(row) { return row.quantity * row.unit_price; }
+function rev(r) { return r.quantity * r.unit_price; }
+function fmt(v) { return v.toLocaleString('pl-PL', {style:'currency', currency:'PLN', maximumFractionDigits:0}); }
+function fmtK(v) { return v >= 1000 ? (v/1000).toFixed(1)+'k' : v.toString(); }
 
-  function groupBy(rows, key) {
-    return rows.reduce((acc, r) => {
-      acc[r[key]] = (acc[r[key]] || 0) + revenue(r);
-      return acc;
-    }, {});
-  }
+function groupSum(rows, key) {
+  const acc = {};
+  rows.forEach(r => { acc[r[key]] = (acc[r[key]]||0) + rev(r); });
+  return acc;
+}
 
-  function makeOrUpdate(ref, id, type, labels, values, legend) {
-    const ctx = document.getElementById(id).getContext('2d');
-    if (ref) ref.destroy();
-    return new Chart(ctx, {
-      type,
-      data: {
-        labels,
-        datasets: [{ label: legend, data: values, backgroundColor: COLORS, borderColor: type === 'line' ? COLORS[0] : COLORS, borderWidth: type === 'line' ? 2 : 0, fill: type === 'line', tension: 0.3, pointRadius: 4 }]
-      },
-      options: {
-        responsive: true,
-        plugins: { legend: { display: false } },
-        scales: type !== 'doughnut' ? { y: { beginAtZero: true, ticks: { callback: v => '₿' + v.toLocaleString() } } } : {}
+function filtered() {
+  const m = document.getElementById('fMonth').value;
+  const c = document.getElementById('fCategory').value;
+  const rg = document.getElementById('fRegion').value;
+  return DATA.filter(r => {
+    if (m !== 'all' && r.sale_date.slice(0,7) !== m) return false;
+    if (c !== 'all' && r.category !== c) return false;
+    if (rg !== 'all' && r.region !== rg) return false;
+    return true;
+  });
+}
+
+function makeChart(id, config) {
+  if (charts[id]) charts[id].destroy();
+  charts[id] = new Chart(document.getElementById(id).getContext('2d'), config);
+}
+
+const baseFont = { family: "'Segoe UI', system-ui, sans-serif", size: 11 };
+const gridColor = '#f1f5f9';
+const tickColor = '#94a3b8';
+
+function scaleDefaults(label) {
+  return {
+    x: { ticks: { color: tickColor, font: baseFont }, grid: { color: gridColor }, title: { display: false } },
+    y: { ticks: { color: tickColor, font: baseFont, callback: v => fmtK(v) }, grid: { color: gridColor }, beginAtZero: true }
+  };
+}
+
+function render() {
+  const rows = filtered();
+  const totalRev = rows.reduce((s, r) => s + rev(r), 0);
+  const totalUnits = rows.reduce((s, r) => s + r.quantity, 0);
+  const avgOrder = rows.length ? totalRev / rows.length : 0;
+
+  const byProduct = groupSum(rows, 'product_name');
+  const byCategory = groupSum(rows, 'category');
+  const byRegion = groupSum(rows, 'region');
+
+  const topProd = Object.entries(byProduct).sort((a,b) => b[1]-a[1])[0] || ['—', 0];
+  const topReg  = Object.entries(byRegion).sort((a,b) => b[1]-a[1])[0]  || ['—', 0];
+
+  // KPIs
+  setText('kRevenue', fmt(totalRev));
+  setText('kRevSub', rows.length + ' transactions');
+  setText('kUnits', totalUnits.toLocaleString());
+  setText('kUnitSub', Object.keys(byProduct).length + ' products');
+  setText('kAvg', fmt(Math.round(avgOrder)));
+  setText('kCount', rows.length);
+  setText('kCountSub', Object.keys(byCategory).length + ' categories');
+  setText('kProduct', topProd[0]);
+  setText('kProductRev', fmt(topProd[1]));
+  setText('kRegion', topReg[0]);
+  setText('kRegionRev', fmt(topReg[1]));
+
+  // ── Trend chart (area) ──
+  const byDate = {};
+  rows.forEach(r => { byDate[r.sale_date] = (byDate[r.sale_date]||0) + rev(r); });
+  const dates = Object.keys(byDate).sort();
+  setText('trendMeta', dates[0] + ' → ' + dates[dates.length-1]);
+  makeChart('cTrend', {
+    type: 'line',
+    data: {
+      labels: dates.map(d => d.slice(5)),
+      datasets: [{
+        label: 'Revenue', data: dates.map(d => byDate[d]),
+        borderColor: '#6366f1', backgroundColor: 'rgba(99,102,241,.12)',
+        fill: true, tension: 0.4, pointRadius: 3, pointBackgroundColor: '#6366f1', borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true, animation: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => fmt(ctx.raw) } } },
+      scales: scaleDefaults()
+    }
+  });
+
+  // ── Category donut ──
+  const catKeys = Object.keys(CAT_COLORS).filter(k => byCategory[k]);
+  setText('catMeta', catKeys.length + ' categories');
+  makeChart('cCategory', {
+    type: 'doughnut',
+    data: {
+      labels: catKeys,
+      datasets: [{ data: catKeys.map(k => byCategory[k]||0), backgroundColor: catKeys.map(k => CAT_COLORS[k]), borderWidth: 2, borderColor: '#fff' }]
+    },
+    options: {
+      responsive: true, animation: false, cutout: '62%',
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ctx.label + ': ' + fmt(ctx.raw) + ' (' + ((ctx.raw/totalRev)*100).toFixed(1) + '%)' } }
       }
+    }
+  });
+  const catLegend = document.getElementById('catLegend');
+  catLegend.innerHTML = catKeys.map(k =>
+    `<div class="legend-item"><span class="legend-dot" style="background:${CAT_COLORS[k]}"></span>${k} ${((byCategory[k]||0)/totalRev*100).toFixed(0)}%</div>`
+  ).join('');
+
+  // ── Products horizontal bar ──
+  const prodEntries = Object.entries(byProduct).sort((a,b) => b[1]-a[1]).slice(0, 10);
+  makeChart('cProducts', {
+    type: 'bar',
+    data: {
+      labels: prodEntries.map(e => e[0]),
+      datasets: [{ label: 'Revenue', data: prodEntries.map(e => e[1]), backgroundColor: '#6366f1', borderRadius: 4, borderSkipped: false }]
+    },
+    options: {
+      indexAxis: 'y', responsive: true, animation: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => fmt(ctx.raw) } } },
+      scales: {
+        x: { ticks: { color: tickColor, font: baseFont, callback: v => fmtK(v) }, grid: { color: gridColor }, beginAtZero: true },
+        y: { ticks: { color: tickColor, font: baseFont }, grid: { display: false } }
+      }
+    }
+  });
+
+  // ── Region bar ──
+  const regKeys = Object.keys(REG_COLORS).filter(k => byRegion[k]);
+  setText('regionMeta', fmt(totalRev));
+  makeChart('cRegion', {
+    type: 'bar',
+    data: {
+      labels: regKeys,
+      datasets: [{ label: 'Revenue', data: regKeys.map(k => byRegion[k]||0), backgroundColor: regKeys.map(k => REG_COLORS[k]), borderRadius: 6, borderSkipped: false }]
+    },
+    options: {
+      responsive: true, animation: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => fmt(ctx.raw) } } },
+      scales: scaleDefaults()
+    }
+  });
+
+  // ── Monthly stacked by category ──
+  const monthData = {};
+  Object.keys(CAT_COLORS).forEach(c => { monthData[c] = MONTHS.map(m => 0); });
+  rows.forEach(r => {
+    const mi = MONTHS.indexOf(r.sale_date.slice(0,7));
+    if (mi >= 0) monthData[r.category][mi] += rev(r);
+  });
+  makeChart('cMonthly', {
+    type: 'bar',
+    data: {
+      labels: MONTHS.map(m => MONTH_LABELS[m]),
+      datasets: Object.entries(CAT_COLORS).map(([cat, color]) => ({
+        label: cat, data: monthData[cat], backgroundColor: color, borderRadius: 3, borderSkipped: false
+      }))
+    },
+    options: {
+      responsive: true, animation: false,
+      plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: baseFont, color: tickColor } }, tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + fmt(ctx.raw) } } },
+      scales: { x: { stacked: true, ticks: { color: tickColor, font: baseFont }, grid: { display: false } }, y: { stacked: true, ticks: { color: tickColor, font: baseFont, callback: v => fmtK(v) }, grid: { color: gridColor } } }
+    }
+  });
+
+  // ── Heat table ──
+  const cats = Object.keys(CAT_COLORS);
+  const regs = Object.keys(REG_COLORS);
+  const cellMax = Math.max(...cats.flatMap(c => regs.map(rg => {
+    return rows.filter(r => r.category===c && r.region===rg).reduce((s,r) => s+rev(r), 0);
+  })));
+  let html = '<table style="width:100%;font-size:0.78rem;border-collapse:collapse">';
+  html += '<thead><tr><th style="padding:6px 10px;color:var(--muted);text-align:left">Category</th>' + regs.map(r => `<th style="padding:6px 8px;color:${REG_COLORS[r]};text-align:right;font-weight:700">${r}</th>`).join('') + '</tr></thead><tbody>';
+  cats.forEach(c => {
+    html += `<tr><td style="padding:7px 10px;font-weight:600;color:${CAT_COLORS[c]}">${c}</td>`;
+    regs.forEach(rg => {
+      const v = rows.filter(r => r.category===c && r.region===rg).reduce((s,r) => s+rev(r), 0);
+      const pct = cellMax ? v/cellMax : 0;
+      const bg = `rgba(99,102,241,${(pct*0.35).toFixed(2)})`;
+      html += `<td style="padding:7px 8px;text-align:right;background:${bg};border-radius:4px">${v ? fmtK(v) : '—'}</td>`;
     });
-  }
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  document.getElementById('heatTable').innerHTML = html;
 
-  function render(category) {
-    const rows = category === 'all' ? DATA : DATA.filter(r => r.category === category);
+  // ── Transactions table ──
+  setText('txMeta', rows.length + ' rows');
+  const sorted = [...rows].sort((a,b) => b.sale_date.localeCompare(a.sale_date));
+  document.getElementById('txBody').innerHTML = sorted.map(r => {
+    const rv = rev(r);
+    const pct = totalRev ? rv/totalRev : 0;
+    return `<tr>
+      <td>${r.sale_date}</td>
+      <td style="font-weight:600">${r.product_name}</td>
+      <td><span class="cat-chip chip-${r.category}">${r.category}</span></td>
+      <td style="color:${REG_COLORS[r.region]};font-weight:600">${r.region}</td>
+      <td style="text-align:right">${r.quantity}</td>
+      <td style="text-align:right">${r.unit_price.toLocaleString('pl-PL')} zł</td>
+      <td style="text-align:right;font-weight:700">${fmt(rv)}</td>
+      <td style="min-width:80px"><div class="rev-bar" style="width:${Math.max(4,pct*100).toFixed(1)}%"></div><span style="font-size:0.7rem;color:var(--muted)">${(pct*100).toFixed(1)}%</span></td>
+    </tr>`;
+  }).join('');
+}
 
-    const totalRevenue = rows.reduce((s, r) => s + revenue(r), 0);
-    const totalUnits   = rows.reduce((s, r) => s + r.quantity, 0);
-    document.getElementById('kpiRevenue').textContent  = totalRevenue.toLocaleString('en-US', { style: 'currency', currency: 'PLN', maximumFractionDigits: 0 });
-    document.getElementById('kpiUnits').textContent    = totalUnits;
-    document.getElementById('kpiProducts').textContent = rows.length;
+function setText(id, val) { document.getElementById(id).textContent = val; }
 
-    const byDate     = groupBy(rows, 'sale_date');
-    const byCat      = groupBy(rows, 'category');
-    const byProduct  = groupBy(rows, 'product_name');
+['fMonth','fCategory','fRegion'].forEach(id => {
+  document.getElementById(id).addEventListener('change', render);
+});
 
-    chartDate     = makeOrUpdate(chartDate,     'chartDate',     'line',     Object.keys(byDate),    Object.values(byDate),    'Revenue');
-    chartCategory = makeOrUpdate(chartCategory, 'chartCategory', 'doughnut', Object.keys(byCat),     Object.values(byCat),     'Revenue');
-    chartProduct  = makeOrUpdate(chartProduct,  'chartProduct',  'bar',      Object.keys(byProduct), Object.values(byProduct), 'Revenue');
-  }
+// Smooth scroll for sidebar links
+document.querySelectorAll('nav a').forEach(a => {
+  a.addEventListener('click', e => {
+    document.querySelectorAll('nav a').forEach(x => x.classList.remove('active'));
+    a.classList.add('active');
+  });
+});
 
-  document.getElementById('categoryFilter').addEventListener('change', e => render(e.target.value));
-  render('all');
+render();
 </script>
 </body>
 </html>

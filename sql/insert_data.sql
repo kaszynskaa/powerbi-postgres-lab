@@ -1,36 +1,47 @@
-INSERT INTO sales (
-    product_name,
-    category,
-    sale_date,
-    quantity,
-    unit_price
-)
+INSERT INTO sales (product_name, category, region, sale_date, quantity, unit_price)
 VALUES
-(
-    'Laptop',
-    'Electronics',
-    '2026-06-01',
-    20,
-    4500.00
-),
-(
-    'Monitor',
-    'Electronics',
-    '2026-06-02',
-    5,
-    1200.00
-),
-(
-    'Keyboard',
-    'Accessories',
-    '2026-06-03',
-    10,
-    300.00
-),
-(
-    'Mouse',
-    'Accessories',
-    '2026-06-04',
-    15,
-    150.00
-);
+-- April 2026
+('Laptop',        'Electronics', 'North', '2026-04-03',  5, 4500.00),
+('Monitor',       'Electronics', 'East',  '2026-04-05',  3, 1200.00),
+('Keyboard',      'Accessories', 'South', '2026-04-07', 12,  300.00),
+('Office License','Software',    'West',  '2026-04-08',  8,  800.00),
+('Desk',          'Furniture',   'North', '2026-04-10',  2, 1800.00),
+('Mouse',         'Accessories', 'East',  '2026-04-12', 20,  150.00),
+('Tablet',        'Electronics', 'South', '2026-04-14',  4, 2800.00),
+('Chair',         'Furniture',   'West',  '2026-04-15',  3, 1200.00),
+('Headphones',    'Accessories', 'North', '2026-04-18',  7,  450.00),
+('Antivirus',     'Software',    'East',  '2026-04-20', 15,  250.00),
+('Smartphone',    'Electronics', 'South', '2026-04-22',  6, 3200.00),
+('USB Hub',       'Accessories', 'West',  '2026-04-25', 10,  120.00),
+('Laptop Stand',  'Accessories', 'North', '2026-04-27',  5,  200.00),
+('Printer',       'Electronics', 'East',  '2026-04-28',  2,  900.00),
+
+-- May 2026
+('Laptop',        'Electronics', 'South', '2026-05-02',  8, 4500.00),
+('Design Suite',  'Software',    'North', '2026-05-04',  3, 1500.00),
+('Monitor',       'Electronics', 'West',  '2026-05-06',  5, 1200.00),
+('Keyboard',      'Accessories', 'East',  '2026-05-08', 15,  300.00),
+('Desk',          'Furniture',   'South', '2026-05-09',  1, 1800.00),
+('Smartphone',    'Electronics', 'North', '2026-05-11', 10, 3200.00),
+('Webcam',        'Accessories', 'West',  '2026-05-13',  8,  350.00),
+('Office License','Software',    'East',  '2026-05-15', 12,  800.00),
+('Mouse',         'Accessories', 'South', '2026-05-17', 25,  150.00),
+('Tablet',        'Electronics', 'North', '2026-05-19',  3, 2800.00),
+('Chair',         'Furniture',   'West',  '2026-05-21',  4, 1200.00),
+('Headphones',    'Accessories', 'East',  '2026-05-23',  6,  450.00),
+('Antivirus',     'Software',    'South', '2026-05-25', 20,  250.00),
+('Printer',       'Electronics', 'North', '2026-05-27',  3,  900.00),
+('USB Hub',       'Accessories', 'West',  '2026-05-28', 14,  120.00),
+('Laptop Stand',  'Accessories', 'East',  '2026-05-30',  8,  200.00),
+
+-- June 2026
+('Laptop',        'Electronics', 'East',  '2026-06-01', 20, 4500.00),
+('Monitor',       'Electronics', 'North', '2026-06-02',  5, 1200.00),
+('Keyboard',      'Accessories', 'West',  '2026-06-03', 10,  300.00),
+('Mouse',         'Accessories', 'South', '2026-06-04', 15,  150.00),
+('Smartphone',    'Electronics', 'East',  '2026-06-06',  7, 3200.00),
+('Design Suite',  'Software',    'North', '2026-06-08',  4, 1500.00),
+('Desk',          'Furniture',   'West',  '2026-06-10',  3, 1800.00),
+('Headphones',    'Accessories', 'South', '2026-06-11',  9,  450.00),
+('Tablet',        'Electronics', 'East',  '2026-06-13',  5, 2800.00),
+('Office License','Software',    'North', '2026-06-13', 10,  800.00);
