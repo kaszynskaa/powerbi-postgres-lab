@@ -1,5 +1,5 @@
 CREATE TABLE dim_region (
-    region_id   SERIAL     PRIMARY KEY,
+    region_id SERIAL PRIMARY KEY,
     region_name VARCHAR(50) NOT NULL UNIQUE
 );
 
